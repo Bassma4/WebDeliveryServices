@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
+
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee 
+https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+
+         version="6.0">
+ 
+    <servlet>
+<servlet-name>JerseyServlet</servlet-name>
+<servlet-class>
+
+            org.glassfish.jersey.servlet.ServletContainer
+</servlet-class>
+<init-param>
+<param-name>jersey.config.server.provider.packages</param-name>
+<!-- Qui metti il package dove creerai le classi API -->
+<param-value>com.mycompany.webdeliveryservices</param-value>
+</init-param>
+<load-on-startup>1</load-on-startup>
+</servlet>
+ 
+    <servlet-mapping>
+<servlet-name>JerseyServlet</servlet-name>
+<!-- Tutte le chiamate /api/* vanno a Jersey -->
+<url-pattern>/api/*</url-pattern>
+</servlet-mapping>
+ 
+</web-app>
+ 
