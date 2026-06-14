@@ -193,7 +193,7 @@ public class AuthResource {
             String sql = "INSERT INTO Utente (email, password, nome_completo, ruolo) VALUES (?, ?, ?, 'cliente')";
             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, email);
-            ps.setString(2, password); // NOTA: in un'app reale andrebbe hashata
+            ps.setString(2, password); 
             ps.setString(3, nomeCompleto);
             ps.executeUpdate();
             
