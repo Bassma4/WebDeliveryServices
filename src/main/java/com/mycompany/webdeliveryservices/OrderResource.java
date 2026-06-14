@@ -239,20 +239,17 @@ public class OrderResource {
     }
 
     // PUNTO 12: Annullamento ordine
-   @DELETE
-@Path("/{prodId}/features/{featId}")
-public Response deleteFeature(
-        @PathParam("prodId") int prodId,
-        @PathParam("featId") int featId,
-        @HeaderParam("Authorization") String token) { 
-
-    Map<String, Object> user = AuthHelper.getUserFromToken(token);
-    if (user == null || (!user.get("ruolo").equals("admin") && !user.get("ruolo").equals("staff"))) {
-        return Response.status(Response.Status.FORBIDDEN)
-                       .entity(Map.of("error", "Permesso negato"))
-                       .build();
-    }
-   { return Response.serverError().build(); }
+    @DELETE
+    @Path("/{id}")
+    public Response annullaOrdine(@PathParam("id") int idOrdine, @HeaderParam("Authorization") String token) {
+        if (AuthHelper.getUserFromToken(token) == null) return Response.status(Response.Status.UNAUTHORIZED).build();
+        try (Connection conn = DBConnect.getConnection()) {
+            String sql = "UPDATE Ordine SET stato_attuale = 'annullato' WHERE id_ordine = ?";
+            PreparedStatement ps = conn.prepareStatement(sql);
+            ps.setInt(1, idOrdine);
+            if (ps.executeUpdate() > 0) return Response.noContent().build();
+            return Response.status(Response.Status.NOT_FOUND).build();
+        } catch (SQLException e) { return Response.serverError().build(); }
     }
 
    
