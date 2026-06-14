@@ -163,5 +163,52 @@ public class AuthResource {
 
     }
 
+   
+    @POST
+    @Path("/register")
+    public Response register(Map<String, String> payload) {
+        String email = payload.get("email");
+        String password = payload.get("password");
+        String nomeCompleto = payload.get("nome_completo");
+        
+        if (email == null || password == null || nomeCompleto == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                           .entity(Map.of("error", "Email, password e nome completo sono obbligatori"))
+                           .build();
+        }
+
+        try (Connection conn = DBConnect.getConnection()) {
+            // Controlla se l'email esiste già
+            String checkSql = "SELECT id_utente FROM Utente WHERE email = ?";
+            PreparedStatement checkPs = conn.prepareStatement(checkSql);
+            checkPs.setString(1, email);
+            ResultSet rs = checkPs.executeQuery();
+            if (rs.next()) {
+                return Response.status(Response.Status.CONFLICT)
+                               .entity(Map.of("error", "Email già in uso"))
+                               .build();
+            }
+
+            // Inserisci il nuovo utente di default con ruolo 'cliente'
+            String sql = "INSERT INTO Utente (email, password, nome_completo, ruolo) VALUES (?, ?, ?, 'cliente')";
+            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, email);
+            ps.setString(2, password); // NOTA: in un'app reale andrebbe hashata
+            ps.setString(3, nomeCompleto);
+            ps.executeUpdate();
+            
+            ResultSet generatedKeys = ps.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return Response.status(Response.Status.CREATED)
+                               .entity(Map.of("message", "Registrazione completata con successo!", "id_utente", generatedKeys.getInt(1)))
+                               .build();
+            }
+        } catch (SQLException e) {
+            return Response.serverError()
+                           .entity(Map.of("error", e.getMessage()))
+                           .build();
+        }
+        return Response.status(Response.Status.BAD_REQUEST).build();
+    }
 }
  

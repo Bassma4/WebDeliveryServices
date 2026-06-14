@@ -280,5 +280,43 @@ public class MenuResource {
 
     }
 
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response aggiungiProdottoMenu(Map<String, Object> payload, @HeaderParam("Authorization") String token) {
+        
+        // Verifica permessi: solo admin o staff possono aggiungere prodotti al menu
+        Map<String, Object> user = AuthHelper.getUserFromToken(token);
+        if (user == null || (!user.get("ruolo").equals("admin") && !user.get("ruolo").equals("staff"))) {
+            return Response.status(Response.Status.FORBIDDEN)
+                           .entity(Map.of("error", "Solo gli admin/staff possono aggiungere prodotti"))
+                           .build();
+        }
+
+        try (Connection conn = DBConnect.getConnection()) {
+            String nome = (String) payload.get("nome");
+            String descrizione = (String) payload.get("descrizione");
+            double prezzoBase = Double.parseDouble(payload.get("prezzo_base").toString());
+
+            String sql = "INSERT INTO Prodotto (nome, descrizione, prezzo_base) VALUES (?, ?, ?)";
+            PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, nome);
+            ps.setString(2, descrizione);
+            ps.setDouble(3, prezzoBase);
+            ps.executeUpdate();
+            
+            ResultSet generatedKeys = ps.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                long idGenerato = generatedKeys.getLong(1);
+                return Response.status(Response.Status.CREATED)
+                        .entity(Map.of("message", "Prodotto aggiunto al menu!", "id_prodotto", idGenerato))
+                        .build();
+            }
+        } catch (SQLException e) {
+            return Response.serverError()
+                           .entity(Map.of("error", e.getMessage()))
+                           .build();
+        }
+        return Response.status(Response.Status.BAD_REQUEST).build();
+    }
 }
  

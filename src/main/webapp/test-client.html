@@ -73,6 +73,32 @@
             <div id="catalogRes" class="response"></div>
         </div>
     </div>
+    
+    
+    <!-- 8. Lista ordini filtrati -->
+<div class="card">
+    <div class="card-title"><i class="fas fa-filter"></i> 8. Ordini filtrati (data / stato)</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="field"><label>Data (YYYY-MM-DD)</label><input type="text" id="filterData" placeholder="es. 2025-06-01"></div>
+            <div class="field"><label>Stato</label><input type="text" id="filterStato" placeholder="es. in preparazione"></div>
+        </div>
+        <button id="filterOrdersBtn"><i class="fas fa-filter"></i> Filtra</button>
+        <div id="filterRes" class="response"></div>
+    </div>
+</div>
+
+<!-- 12. Annullamento ordine -->
+<div class="card">
+    <div class="card-title"><i class="fas fa-ban"></i> 12. Annulla ordine</div>
+    <div class="card-body">
+        <div class="row">
+            <div class="field"><label>ID Ordine</label><input type="number" id="annullaId" value="1"></div>
+        </div>
+        <button class="primary" id="annullaBtn"><i class="fas fa-trash"></i> Annulla ordine</button>
+        <div id="annullaRes" class="response"></div>
+    </div>
+</div>
 
     <!-- Aggiornamento stato (op.8) e operatori (op.12) -->
     <div class="card">
@@ -106,7 +132,7 @@
             $("#logoutBtn").hide();
         }
     }
-
+ 
     
     function explainError(xhr, endpoint) {
         let status = xhr.status;
@@ -227,6 +253,34 @@
         }
         apiCall("PUT", "/ordini/" + oid + "/stato", { stato }, "staffRes", "🔄 STATO AGGIORNATO");
     });
+    
+    // 8. Filtra ordini
+$("#filterOrdersBtn").click(() => {
+    if (!token) { $("#filterRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+    let data = $("#filterData").val().trim(), stato = $("#filterStato").val().trim();
+    let params = [];
+    if (data) params.push("data=" + encodeURIComponent(data));
+    if (stato) params.push("stato=" + encodeURIComponent(stato));
+    if (params.length === 0) {
+        $("#filterRes").text("⚠️ Inserisci almeno una data o uno stato.");
+        return;
+    }
+    apiCall("GET", "/ordini?" + params.join("&"), null, "filterRes", "📦 ORDINI FILTRATI");
+});
+
+// 12. Annulla ordine
+$("#annullaBtn").click(() => {
+    if (!token) { $("#annullaRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+    let id = $("#annullaId").val();
+    if (!id) { $("#annullaRes").text("⚠️ Inserisci ID ordine."); return; }
+    $.ajax({
+        url: API + "/ordini/" + id,
+        type: "DELETE",
+        headers: token ? { Authorization: token } : {},
+        success: () => $("#annullaRes").text("✅ Ordine " + id + " annullato."),
+        error: (xhr) => $("#annullaRes").text(explainError(xhr, "/ordini/" + id))
+    });
+});
 
     // Lista operatori ordine (op.12)
     $("#operatorsBtn").click(() => {

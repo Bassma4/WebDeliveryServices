@@ -1,0 +1,587 @@
+openapi: 3.0.0
+info:
+  title: WebDeliveryServices API
+  description: API RESTful per la gestione di un servizio di food delivery.
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Server locale Tomcat
+paths:
+  /auth/login:
+    post:
+      summary: Login utente (Op. 1)
+      tags:
+        - Autenticazione
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+              example:
+                email: "admin@example.com"
+                password: "admin123"
+      responses:
+        '200':
+          description: Login effettuato con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  token: "123e4567-e89b-12d3-a456-426614174000"
+                  id_utente: 1
+                  nome_completo: "Mario Rossi"
+                  ruolo: "admin"
+        '400':
+          description: Email e password obbligatori
+        '401':
+          description: Credenziali non valide
+        '500':
+          description: Errore interno del server
+
+  /auth/logout:
+    delete:
+      summary: Logout utente (Op. 1)
+      tags:
+        - Autenticazione
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '204':
+          description: Logout effettuato con successo (Token rimosso)
+        '400':
+          description: Token mancante
+        '404':
+          description: Token non trovato
+        '500':
+          description: Errore interno del server
+
+  /auth/register:
+    post:
+      summary: Registrazione Nuovo Cliente (Opzionale)
+      tags:
+        - Autenticazione
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                password:
+                  type: string
+                nome_completo:
+                  type: string
+              example:
+                email: "cliente@example.com"
+                password: "pass"
+                nome_completo: "Luigi Verdi"
+      responses:
+        '201':
+          description: Registrazione completata con successo
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: "Registrazione completata con successo!"
+                  id_utente: 2
+        '400':
+          description: Parametri obbligatori mancanti
+        '409':
+          description: Email già in uso
+        '500':
+          description: Errore interno del server
+
+  /menu:
+    get:
+      summary: Lettura del menu completo (Op. 2)
+      tags:
+        - Menu
+      responses:
+        '200':
+          description: Lista dei prodotti con caratteristiche
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - id_prodotto: 1
+                  nome: "Pizza Margherita"
+                  descrizione: "Pomodoro, mozzarella, basilico"
+                  prezzo_base: 6.5
+                  caratteristiche:
+                    - id_caratteristica: 1
+                      nome: "Impasto Integrale"
+                      descrizione: "Impasto con farina integrale"
+                      differenza_prezzo: 1.5
+                      is_default: false
+                      id_gruppo: null
+        '500':
+          description: Errore interno del server
+
+    post:
+      summary: Aggiungi prodotto al menu (Extra)
+      tags:
+        - Menu
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              example:
+                nome: "Pizza Diavola"
+                descrizione: "Pomodoro, mozzarella, salame piccante"
+                prezzo_base: 7.5
+      responses:
+        '201':
+          description: Prodotto aggiunto
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: "Prodotto aggiunto al menu!"
+                  id_prodotto: 5
+        '400':
+          description: Dati mancanti o invalidi
+        '403':
+          description: Accesso negato (Solo admin/staff)
+        '500':
+          description: Errore interno del server
+
+  /menu/search:
+    get:
+      summary: Ricerca prodotti nel menu (Op. 3)
+      tags:
+        - Menu
+      parameters:
+        - in: query
+          name: name
+          schema:
+            type: string
+          description: Nome del prodotto
+        - in: query
+          name: minPrice
+          schema:
+            type: number
+            format: double
+          description: Prezzo minimo
+        - in: query
+          name: maxPrice
+          schema:
+            type: number
+            format: double
+          description: Prezzo massimo
+      responses:
+        '200':
+          description: Risultati della ricerca
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - id_prodotto: 1
+                  nome: "Pizza Margherita"
+                  descrizione: "Pomodoro, mozzarella"
+                  prezzo_base: 6.5
+        '500':
+          description: Errore interno del server
+
+  /menu/{prodId}/ingredients:
+    get:
+      summary: Lista ingredienti di un prodotto (Op. 10)
+      tags:
+        - Menu
+      parameters:
+        - in: path
+          name: prodId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ingredienti trovati
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  ingredienti: "Farina, Acqua, Pomodoro, Mozzarella"
+        '404':
+          description: Prodotto non trovato
+        '500':
+          description: Errore interno del server
+
+  /menu/{prodId}/features/{featId}:
+    delete:
+      summary: Eliminazione caratteristica associata a prodotto (Op. 4)
+      tags:
+        - Menu
+      parameters:
+        - in: path
+          name: prodId
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: featId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Caratteristica eliminata con successo
+        '404':
+          description: Caratteristica non trovata
+        '500':
+          description: Errore interno del server
+
+  /ordini:
+    get:
+      summary: Lista ordini filtrati (Op. 8)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: query
+          name: data
+          schema:
+            type: string
+            format: date
+          description: Data creazione (es. YYYY-MM-DD)
+        - in: query
+          name: stato
+          schema:
+            type: string
+          description: Stato attuale dell'ordine
+        - in: query
+          name: userId
+          schema:
+            type: integer
+          description: ID Utente
+      responses:
+        '200':
+          description: Lista degli ordini
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - id_ordine: 1
+                  data_creazione: "2025-06-01 19:30:00"
+                  stato_attuale: "in preparazione"
+                  prezzo_totale: 15.5
+        '403':
+          description: Accesso negato (Solo Staff o Admin)
+        '500':
+          description: Errore interno del server
+
+  /ordini/me:
+    get:
+      summary: Estrazione ordini effettuati dall'utente (Op. 9)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Miei ordini
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - id_ordine: 2
+                  data_creazione: "2025-06-01 20:00:00"
+                  prezzo_totale: 20.0
+                  stato_attuale: "consegnato"
+        '401':
+          description: Autenticazione richiesta
+        '500':
+          description: Errore interno del server
+
+  /ordini/statistiche:
+    get:
+      summary: Statistiche globali ordini (Extra)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      responses:
+        '200':
+          description: Statistiche ordini
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  totale_ordini: 150
+                  incasso_totale: 1450.5
+        '403':
+          description: Solo ADMIN
+        '500':
+          description: Errore interno del server
+
+  /ordini/{id}:
+    delete:
+      summary: Annullamento ordine (Op. 12)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Ordine annullato con successo
+        '401':
+          description: Autenticazione richiesta
+        '404':
+          description: Ordine non trovato
+        '500':
+          description: Errore interno del server
+
+  /ordini/{id}/prodotti:
+    get:
+      summary: Lista prodotti dell'ordine con caratteristiche (Op. 13)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Prodotti dell'ordine
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - id_prodotto: 1
+                  nome: "Pizza Margherita"
+                  quantita: 2
+                  prezzo_unitario: 6.5
+                  caratteristiche:
+                    - id_caratteristica: 1
+                      nome: "Impasto Integrale"
+        '401':
+          description: Autenticazione richiesta
+        '500':
+          description: Errore interno del server
+
+    post:
+      summary: Inserimento prodotto in ordine (Op. 5)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_prodotto:
+                  type: integer
+                quantita:
+                  type: integer
+                prezzo_unitario:
+                  type: number
+                  format: double
+                caratteristiche:
+                  type: array
+                  items:
+                    type: integer
+              example:
+                id_prodotto: 1
+                quantita: 2
+                prezzo_unitario: 6.5
+                caratteristiche: [1, 3]
+      responses:
+        '201':
+          description: Prodotto aggiunto all'ordine
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: "Prodotto aggiunto all'ordine con successo"
+        '401':
+          description: Autenticazione richiesta
+        '500':
+          description: Errore interno del server
+
+  /ordini/{id}/tempo-consegna:
+    get:
+      summary: Tempo stimato di consegna (Op. 6)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Tempo stimato
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  id_ordine: 1
+                  tempo_stimato_minuti: 45
+                  messaggio: "In preparazione"
+        '401':
+          description: Autenticazione richiesta
+
+  /ordini/{id}/prezzo-totale:
+    get:
+      summary: Prezzo totale di un ordine (Op. 6)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Prezzo totale
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  id_ordine: 1
+                  prezzo_totale: 25.5
+        '401':
+          description: Autenticazione richiesta
+        '404':
+          description: Ordine non trovato
+        '500':
+          description: Errore interno
+
+  /ordini/{id}/stato:
+    put:
+      summary: Aggiornamento stato ordine (Op. 7)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stato:
+                  type: string
+              example:
+                stato: "in consegna"
+      responses:
+        '200':
+          description: Stato aggiornato
+          content:
+            application/json:
+              schema:
+                type: object
+                example:
+                  message: "Stato aggiornato"
+        '403':
+          description: Accesso negato
+        '404':
+          description: Ordine non trovato
+        '500':
+          description: Errore interno
+
+  /ordini/{id}/operatori:
+    get:
+      summary: Lista operatori coinvolti in ordine (Op. 11)
+      tags:
+        - Ordini
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Operatori coinvolti
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+              example:
+                - nome: "Luigi Bianchi"
+                  ruolo: "pizzaiolo"
+                - nome: "Marco Neri"
+                  ruolo: "fattorino"
+        '403':
+          description: Accesso negato
+        '500':
+          description: Errore interno
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
