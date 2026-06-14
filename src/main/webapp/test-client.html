@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebDeliveryServices</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box;}
+        body{background:#eef5ea;font-family:'Segoe UI',Roboto,sans-serif;padding:20px;color:#1e3a2f;}
+        .container{max-width:1000px;margin:0 auto;}
+        .header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #2e7d64;padding-bottom:10px;margin-bottom:24px;}
+        .header h1{font-size:1.6rem;font-weight:500;color:#1f543b;}
+        .badge{background:#d9e8db;padding:4px 12px;border-radius:40px;font-size:12px;}
+        .status{background:#fff;border-radius:40px;padding:8px 20px;margin-bottom:24px;display:flex;justify-content:space-between;align-items:center;border:1px solid #cde0cd;}
+        .status-left{display:flex;align-items:center;gap:10px;}
+        .led{width:10px;height:10px;border-radius:50%;background:#bdd4bd;}
+        .led.active{background:#2e7d64;box-shadow:0 0 0 2px #c8f0dc;}
+        button.logout{background:none;border:1px solid #cde0cd;padding:4px 14px;border-radius:30px;font-size:12px;cursor:pointer;}
+        .card{background:#fff;border-radius:20px;border:1px solid #d9e8db;margin-bottom:24px;overflow:hidden;}
+        .card-title{padding:14px 20px;background:#f9fef7;border-bottom:1px solid #e2f0e2;font-weight:500;display:flex;align-items:center;gap:8px;}
+        .card-body{padding:20px;}
+        .row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
+        .field{flex:1;min-width:120px;}
+        label{font-size:11px;font-weight:600;color:#4c735c;display:block;margin-bottom:4px;text-transform:uppercase;}
+        input{width:100%;padding:9px 12px;border:1px solid #cfdfcf;border-radius:14px;font-size:13px;}
+        input:focus{outline:none;border-color:#2e7d64;}
+        button{background:#eaf4ea;border:1px solid #c5dbc5;padding:7px 18px;border-radius:40px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:8px;}
+        button.primary{background:#2e7d64;color:#fff;border-color:#246b55;}
+        button.primary:hover{background:#236b55;}
+        .actions{display:flex;gap:12px;margin:12px 0 16px;}
+        .response{background:#fafef8;border-left:3px solid #7eb09b;padding:12px;margin-top:16px;font-family:monospace;font-size:11px;white-space:pre-wrap;border-radius:12px;}
+        hr{margin:18px 0;border:0;border-top:1px solid #e2f0e2;}
+        .error-hint{color:#b45f3b; margin-top:6px; font-size:10px;}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-seedling"></i> WebDeliveryServices</h1>
+        <div class="badge">api/</div>
+    </div>
+    <div class="status">
+        <div class="status-left"><div class="led" id="statusLed"></div><span id="statusText">Disconnesso</span></div>
+        <button id="logoutBtn" class="logout" style="display:none;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+
+    <!-- Login (op.1) -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-key"></i> 1. Accesso</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="field"><label>Email</label><input type="text" id="email" value="admin@example.com"></div>
+                <div class="field"><label>Password</label><input type="password" id="password" value="admin123"></div>
+            </div>
+            <button class="primary" id="loginBtn"><i class="fas fa-sign-in-alt"></i> Accedi</button>
+            <div id="loginRes" class="response"></div>
+        </div>
+    </div>
+
+    <!-- Menu e ricerca (op.2 e 3) -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-utensils"></i> 2. Menu & 3. Ricerca</div>
+        <div class="card-body">
+            <div class="actions"><button id="menuBtn"><i class="fas fa-list"></i> Mostra menu completo</button></div>
+            <div class="row">
+                <div class="field"><label>Nome prodotto</label><input type="text" id="searchName" placeholder="es. Margherita"></div>
+                <div class="field"><label>Prezzo min (€)</label><input type="number" step="0.5" id="minPrice" placeholder="min"></div>
+                <div class="field"><label>Prezzo max (€)</label><input type="number" step="0.5" id="maxPrice" placeholder="max"></div>
+            </div>
+            <button id="searchBtn"><i class="fas fa-search"></i> Cerca (nome e/o prezzo)</button>
+            <div id="catalogRes" class="response"></div>
+        </div>
+    </div>
+
+    <!-- Aggiornamento stato (op.8) e operatori (op.12) -->
+    <div class="card">
+        <div class="card-title"><i class="fas fa-tasks"></i> 8. Stato ordine & 12. Operatori</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="field"><label>ID ordine (per stato)</label><input type="number" id="orderIdState" value="1"></div>
+                <div class="field"><label>Nuovo stato</label><input type="text" id="newState" value="in preparazione"></div>
+            </div>
+            <button class="primary" id="updateStateBtn"><i class="fas fa-pen"></i> Aggiorna stato</button>
+            <hr>
+            <div class="field"><label>ID ordine (per operatori)</label><input type="number" id="orderIdOps" value="1"></div>
+            <button id="operatorsBtn"><i class="fas fa-users"></i> Mostra operatori</button>
+            <div id="staffRes" class="response"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let token = "";
+    const API = "api";
+
+    function updateUI() {
+        if (token) {
+            $("#statusLed").addClass("active");
+            $("#statusText").text("Connesso");
+            $("#logoutBtn").show();
+        } else {
+            $("#statusLed").removeClass("active");
+            $("#statusText").text("Disconnesso");
+            $("#logoutBtn").hide();
+        }
+    }
+
+    
+    function explainError(xhr, endpoint) {
+        let status = xhr.status;
+        let responseText = xhr.responseText;
+        if (status === 0) {
+            return "❌ Impossibile contattare il server. Verifica che il backend sia avviato su 'api/' (es. Tomcat su localhost:8080). Il client prova a chiamare '" + API + endpoint + "'.";
+        }
+        if (status === 404) {
+            return "❌ Endpoint non trovato (404). Controlla che l'URL sia corretto: '" + API + endpoint + "'. Forse il servizio non è deployato o il percorso è sbagliato.";
+        }
+        if (status === 401) {
+            return "❌ Autenticazione richiesta (401). Token non valido o scaduto. Effettua di nuovo il login.";
+        }
+        if (status === 403) {
+            return "❌ Accesso negato (403). Non hai i permessi per questa operazione.";
+        }
+        if (status === 500) {
+            return "❌ Errore interno del server (500). Controlla i log del backend.";
+        }
+        
+        try {
+            let json = JSON.parse(responseText);
+            if (json.message) return "❌ " + json.message;
+            if (json.error) return "❌ " + json.error;
+        } catch(e) {}
+        return "❌ Errore " + status + " - " + (responseText || "Nessun dettaglio dal server");
+    }
+
+    function apiCall(method, endpoint, data, targetId, prefix = "") {
+        const $t = $("#" + targetId);
+        $t.text("⏳ caricamento...");
+        $.ajax({
+            url: API + endpoint,
+            type: method,
+            contentType: "application/json",
+            headers: token ? { Authorization: token } : {},
+            data: data ? JSON.stringify(data) : null,
+            success: (res) => {
+                let out = res || {};
+                let txt = JSON.stringify(out, null, 2);
+                if (prefix) txt = prefix + "\n" + txt;
+                $t.text(txt);
+            },
+            error: (xhr) => {
+                let explanation = explainError(xhr, endpoint);
+                $t.text(explanation);
+                if (xhr.status === 401) {
+                    token = "";
+                    updateUI();
+                }
+            }
+        });
+    }
+
+    // Login
+    $("#loginBtn").click(() => {
+        let email = $("#email").val(), pwd = $("#password").val();
+        if (!email || !pwd) {
+            $("#loginRes").text("⚠️ Inserisci email e password.");
+            return;
+        }
+        $.ajax({
+            url: API + "/auth/login",
+            type: "POST",
+            contentType: "application/json",
+            data: JSON.stringify({ email, password: pwd }),
+            success: (res) => {
+                token = res.token;
+                updateUI();
+                $("#loginRes").text(JSON.stringify(res, null, 2));
+            },
+            error: (xhr) => {
+                token = "";
+                updateUI();
+                let explanation = explainError(xhr, "/auth/login");
+                $("#loginRes").text(explanation);
+            }
+        });
+    });
+
+    // Logout
+    $("#logoutBtn").click(() => {
+        token = "";
+        updateUI();
+        $("#loginRes").text("✅ Logout effettuato. Token rimosso.");
+        $("#catalogRes, #staffRes").text("");
+    });
+
+    // Menu completo (op.2)
+    $("#menuBtn").click(() => {
+        if (!token) { $("#catalogRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+        apiCall("GET", "/menu", null, "catalogRes", "📋 MENU COMPLETO");
+    });
+
+    // Ricerca con nome e/o prezzo (op.3)
+    $("#searchBtn").click(() => {
+        if (!token) { $("#catalogRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+        let name = $("#searchName").val().trim();
+        let min = $("#minPrice").val(), max = $("#maxPrice").val();
+        let params = [];
+        if (name) params.push("name=" + encodeURIComponent(name));
+        if (min !== "" && !isNaN(parseFloat(min))) params.push("minPrice=" + parseFloat(min));
+        if (max !== "" && !isNaN(parseFloat(max))) params.push("maxPrice=" + parseFloat(max));
+        if (params.length === 0) {
+            $("#catalogRes").text("⚠️ Inserisci almeno un nome oppure un intervallo di prezzo (min e/o max).");
+            return;
+        }
+        apiCall("GET", "/menu/search?" + params.join("&"), null, "catalogRes", "🔎 RISULTATI RICERCA");
+    });
+
+    // Aggiorna stato ordine (op.8)
+    $("#updateStateBtn").click(() => {
+        if (!token) { $("#staffRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+        let oid = $("#orderIdState").val(), stato = $("#newState").val().trim();
+        if (!oid || !stato) {
+            $("#staffRes").text("⚠️ Inserisci ID ordine e nuovo stato.");
+            return;
+        }
+        apiCall("PUT", "/ordini/" + oid + "/stato", { stato }, "staffRes", "🔄 STATO AGGIORNATO");
+    });
+
+    // Lista operatori ordine (op.12)
+    $("#operatorsBtn").click(() => {
+        if (!token) { $("#staffRes").text("🔐 Devi prima effettuare il login (operazione 1)."); return; }
+        let oid = $("#orderIdOps").val();
+        if (!oid) {
+            $("#staffRes").text("⚠️ Inserisci l'ID dell'ordine.");
+            return;
+        }
+        apiCall("GET", "/ordini/" + oid + "/operatori", null, "staffRes", "👥 OPERATORI COINVOLTI");
+    });
+
+    updateUI();
+</script>
+</body>
+</html>

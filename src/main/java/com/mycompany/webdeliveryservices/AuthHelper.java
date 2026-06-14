@@ -6,13 +6,7 @@ import java.util.*;
  
 public class AuthHelper {
  
-    /**
-
-     * Verifica il token e restituisce le info dell'utente.
-
-     * Ritorna null se il token non è valido.
-
-     */
+    
 
     public static Map<String, Object> getUserFromToken(String token) {
 

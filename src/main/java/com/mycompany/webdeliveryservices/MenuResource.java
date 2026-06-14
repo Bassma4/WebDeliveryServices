@@ -14,8 +14,7 @@ import java.util.*;
 
 public class MenuResource {
  
-    // OP.2 — GET /api/menu — lista completa prodotti con caratteristiche
-
+    
     @GET
 
     public Response getMenu() {
@@ -24,7 +23,7 @@ public class MenuResource {
 
         try (Connection conn = DBConnect.getConnection()) {
  
-            // Prendi tutti i prodotti
+          
 
             String sqlProd = "SELECT id_prodotto, nome, descrizione, prezzo_base FROM Prodotto";
 
@@ -46,7 +45,7 @@ public class MenuResource {
 
                 product.put("prezzo_base", rs.getDouble("prezzo_base"));
  
-                // Per ogni prodotto, prendi le sue caratteristiche
+               
 
                 List<Map<String, Object>> features = new ArrayList<>();
 
@@ -102,7 +101,6 @@ public class MenuResource {
 
     }
  
-    // OP.3 — GET /api/menu/search?name=...&minPrice=...&maxPrice=...
 
     @GET
 
@@ -190,7 +188,7 @@ public class MenuResource {
 
     }
  
-    // OP.10 — GET /api/menu/{prodId}/ingredients
+    
 
     @GET
 
@@ -234,7 +232,7 @@ public class MenuResource {
 
     }
  
-    // OP.4 — DELETE /api/menu/{prodId}/features/{featId}
+    
 
     @DELETE
 
@@ -268,7 +266,7 @@ public class MenuResource {
 
             }
 
-            return Response.noContent().build(); // 204 = eliminato con successo
+            return Response.noContent().build();
  
         } catch (SQLException e) {
 

@@ -40,7 +40,7 @@ public class AuthResource {
  
         try (Connection conn = DBConnect.getConnection()) {
  
-            // Verifica utente nel DB
+           
 
             String sql = "SELECT id_utente, nome_completo, ruolo " +
 
@@ -70,11 +70,11 @@ public class AuthResource {
 
             String ruolo = rs.getString("ruolo");
  
-            // Genera token univoco
+          
 
             String token = UUID.randomUUID().toString();
  
-            // Salva il token nel DB
+            
 
             String sqlInsert = "INSERT INTO Sessione (token, id_utente) VALUES (?, ?)";
 
@@ -86,7 +86,6 @@ public class AuthResource {
 
             psInsert.executeUpdate();
  
-            // Restituisce token + info utente
 
             Map<String, Object> response = new HashMap<>();
 
@@ -112,7 +111,7 @@ public class AuthResource {
 
     }
  
-    // OP.1b — DELETE /api/auth/logout
+    
 
     @DELETE
 
@@ -150,7 +149,7 @@ public class AuthResource {
 
             }
  
-            return Response.noContent().build(); // 204 = logout OK
+            return Response.noContent().build(); 
  
         } catch (SQLException e) {
 
